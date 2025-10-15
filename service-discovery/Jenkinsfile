@@ -37,7 +37,14 @@ pipeline {
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: "${SERVICE_NAME}/target/surefire-reports/*.xml"
+                    script {
+                        def reportExists = fileExists("${SERVICE_NAME}/target/surefire-reports")
+                        if (reportExists) {
+                            junit allowEmptyResults: true, testResults: "${SERVICE_NAME}/target/surefire-reports/*.xml"
+                        } else {
+                            echo "No test reports found - skipping test results publication"
+                        }
+                    }
                 }
             }
         }
