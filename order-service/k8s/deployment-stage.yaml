@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: stage
+  labels:
+    app: order-service
+    environment: stage
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+        environment: stage
+    spec:
+      containers:
+      - name: order-service
+        image: ecommerce/order-service:stage-latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8300
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "stage"
+        - name: EUREKA_CLIENT_ENABLED
+          value: "false"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8300
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8300
+          initialDelaySeconds: 30
+          periodSeconds: 5

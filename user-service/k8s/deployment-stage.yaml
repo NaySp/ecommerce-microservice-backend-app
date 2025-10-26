@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: stage
+  labels:
+    app: user-service
+    environment: stage
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+        environment: stage
+    spec:
+      containers:
+      - name: user-service
+        image: ecommerce/user-service:stage-latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8700
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "stage"
+        - name: EUREKA_CLIENT_ENABLED
+          value: "false"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8700
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8700
+          initialDelaySeconds: 30
+          periodSeconds: 5
