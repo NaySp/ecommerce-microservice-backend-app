@@ -1,7 +1,14 @@
 from locust import HttpUser, between, task
 
-class CatalogBrowsingUser(HttpUser):
+class ProductUser(HttpUser):
     wait_time = between(1, 2)
-    @task
-    def list_products(self):
-        self.client.get("/api/products")
+    
+    @task(3)
+    def browse_catalog(self):
+        """Listar todos los productos"""
+        self.client.get("/product-service/api/products")
+    
+    @task(1)
+    def get_product_detail(self):
+        """Obtener producto específico"""
+        self.client.get("/product-service/api/products/1")
