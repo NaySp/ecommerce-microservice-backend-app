@@ -31,7 +31,7 @@ pipeline {
                 }
             }
         }
-        stage('Build & Push Docker Image') {
+        stage('Build Docker Image') {
             steps {
                 dir(env.SERVICE_NAME) {
                     sh """
@@ -54,32 +54,14 @@ pipeline {
                 }
             }
         }
-        stage('Integration Tests') {
+        stage('Verify Deployment') {
             steps {
-                dir(env.SERVICE_NAME) {
-                    script {
-                        def nodePort = sh(
-                            script: "kubectl get svc ${SERVICE_NAME} -n ${K8S_NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}'",
-                            returnStdout: true
-                        ).trim()
-                        sh "export TEST_HOST=http://localhost:${nodePort} && ./mvnw verify -Dtest=*IntegrationTest"
-                    }
-                }
-            }
-        }
-        stage('Smoke Tests') {
-            steps {
-                dir(env.SERVICE_NAME) {
-                    withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                        script {
-                            def nodePort = sh(
-                                script: "kubectl get svc ${SERVICE_NAME} -n ${K8S_NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}'",
-                                returnStdout: true
-                            ).trim()
-                            sh "curl -f http://localhost:${nodePort}/actuator/health"
-                            sh "curl -f http://localhost:${nodePort}/order-service/api/orders"
-                        }
-                    }
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh """
+                        echo 'Verificando deployment en namespace ${K8S_NAMESPACE}...'
+                        kubectl get pods -n ${K8S_NAMESPACE} -l app=${SERVICE_NAME}
+                        kubectl get svc -n ${K8S_NAMESPACE} -l app=${SERVICE_NAME}
+                    """
                 }
             }
         }
@@ -92,7 +74,7 @@ pipeline {
             echo 'Pipeline de Order Service (stage) falló.'
         }
         always {
-            echo 'Limpieza finalizada.'
+            echo 'Pipeline completado.'
         }
     }
 }

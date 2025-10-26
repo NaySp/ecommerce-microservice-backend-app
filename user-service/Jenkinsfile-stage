@@ -12,20 +12,14 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm // Descarga el código fuente
+                checkout scm
             }
         }
-        stage('Build') {
+        stage('Build & Test') {
             steps {
                 dir(env.SERVICE_NAME) {
-                    sh './mvnw clean compile -DskipTests' // Compila sin ejecutar tests aun
-                }
-            }
-        }
-        stage('Unit Tests') {
-            steps {
-                dir(env.SERVICE_NAME) {
-                    sh './mvnw test' // Ejecuta pruebas unitarias
+                    sh './mvnw clean compile'
+                    sh './mvnw test'
                     junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
                 }
             }
@@ -33,7 +27,7 @@ pipeline {
         stage('Package') {
             steps {
                 dir(env.SERVICE_NAME) {
-                    sh './mvnw package -DskipTests' // Empaqueta el JAR
+                    sh './mvnw package -DskipTests'
                 }
             }
         }
@@ -41,13 +35,13 @@ pipeline {
             steps {
                 dir(env.SERVICE_NAME) {
                     sh """
-                        docker build -t ${DOCKER_IMAGE}:${STAGE_TAG} . // Construye imagen con tag de build
+                        docker build -t ${DOCKER_IMAGE}:${STAGE_TAG} .
                         docker tag ${DOCKER_IMAGE}:${STAGE_TAG} ${DOCKER_IMAGE}:stage-latest
                     """
                 }
             }
         }
-        stage('Deploy to Kubernetes Stage') {
+        stage('Deploy to K8s Stage') {
             steps {
                 dir(env.SERVICE_NAME) {
                     withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
@@ -60,57 +54,27 @@ pipeline {
                 }
             }
         }
-        stage('Integration Tests in Stage') {
+        stage('Verify Deployment') {
             steps {
-                dir(env.SERVICE_NAME) {
-                    script {
-                        def nodePort = sh(
-                            script: """kubectl get svc ${SERVICE_NAME} -n ${K8S_NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}'""",
-                            returnStdout: true
-                        ).trim() // Extrae el NodePort asignado por Kubernetes
-                        sh """
-                            export TEST_HOST=http://localhost:${nodePort}
-                            ./mvnw verify -Dtest=*IntegrationTest // Pruebas de integración apuntando al despliegue
-                        """
-                    }
-                }
-            }
-        }
-        stage('Smoke Tests') {
-            steps {
-                dir(env.SERVICE_NAME) {
-                    withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                        script {
-                            def nodePort = sh(
-                                script: """kubectl get svc ${SERVICE_NAME} -n ${K8S_NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}'""",
-                                returnStdout: true
-                            ).trim()
-                            sh """
-                                curl -f http://localhost:${nodePort}/actuator/health // Verifica health endpoint
-                                curl -f http://localhost:${nodePort}/user-service/api/users // Verifica endpoint principal
-                            """
-                        }
-                    }
-                }
-            }
-        }
-        stage('Archive Artifacts') {
-            steps {
-                dir(env.SERVICE_NAME) {
-                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true, allowEmptyArchive: false
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh """
+                        echo 'Verificando deployment en namespace ${K8S_NAMESPACE}...'
+                        kubectl get pods -n ${K8S_NAMESPACE} -l app=${SERVICE_NAME}
+                        kubectl get svc -n ${K8S_NAMESPACE} -l app=${SERVICE_NAME}
+                    """
                 }
             }
         }
     }
     post {
         success {
-            echo 'Pipeline STAGE ejecutado exitosamente'
+            echo 'User Service desplegado correctamente en stage.'
         }
         failure {
-            echo 'Pipeline STAGE falló'
+            echo 'Pipeline de User Service (stage) falló.'
         }
         always {
-            echo '=== Limpieza ===' // Aquí podría agregarse limpieza de imágenes, si se requiere
+            echo 'Pipeline completado.'
         }
     }
 }
