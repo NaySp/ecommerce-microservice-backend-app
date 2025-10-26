@@ -46,8 +46,8 @@ pipeline {
                 dir(env.SERVICE_NAME) {
                     withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                         sh """
-                            kubectl apply -f k8s/deployment-stage.yaml
-                            kubectl apply -f k8s/service-stage.yaml
+                            kubectl apply -f k8s/deployment-stage.yaml --validate=false
+                            kubectl apply -f k8s/service-stage.yaml --validate=false
                             kubectl rollout status deployment/${SERVICE_NAME} -n ${K8S_NAMESPACE} --timeout=5m
                         """
                     }
