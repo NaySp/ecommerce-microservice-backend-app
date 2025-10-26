@@ -20,7 +20,7 @@ spec:
       containers:
       - name: user-service
         image: ecommerce/user-service:stage-latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8700
         env:
