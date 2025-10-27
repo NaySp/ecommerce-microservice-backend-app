@@ -45,6 +45,6 @@ spec:
           httpGet:
             path: /actuator/health/readiness
             port: 8500
-          initialDelaySeconds: 90
+          initialDelaySeconds: 120
           periodSeconds: 5
-          failureThreshold: 5
+          failureThreshold: 10
