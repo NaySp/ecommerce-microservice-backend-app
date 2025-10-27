@@ -27,7 +27,7 @@ pipeline {
         stage('Package') {
             steps {
                 dir(env.SERVICE_NAME) {
-                    sh './mvnw package -DskipTests'
+                    sh './mvnw clean package -DskipTests'
                 }
             }
         }
