@@ -25,7 +25,25 @@ spec:
         - containerPort: 8300
         env:
         - name: SPRING_PROFILES_ACTIVE
-          value: "stage"
+          valueFrom:
+            configMapKeyRef:
+              name: micro-config
+              key: SPRING_PROFILES_ACTIVE
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: micro-config
+              key: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+        - name: USER_SERVICE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: micro-config
+              key: USER_SERVICE_HOST
+        - name: PRODUCT_SERVICE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: micro-config
+              key: PRODUCT_SERVICE_HOST
         resources:
           requests:
             memory: "64Mi"

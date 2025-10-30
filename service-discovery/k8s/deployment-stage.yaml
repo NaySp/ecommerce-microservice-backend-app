@@ -25,7 +25,10 @@ spec:
             - containerPort: 8761
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: "stage"
+              valueFrom:
+                configMapKeyRef:
+                  name: micro-config
+                  key: SPRING_PROFILES_ACTIVE
           resources:
             requests:
               memory: "64Mi"

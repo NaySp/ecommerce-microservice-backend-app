@@ -15,6 +15,13 @@ pipeline {
                 checkout scm
             }
         }
+        stage('Apply ConfigMap') {
+            steps {
+                sh """
+                    kubectl apply -f k8s/02-configmap-staging.yaml --validate=false || true
+                """
+            }
+        }
         stage('Build & Test') {
             steps {
                 dir(env.SERVICE_NAME) {
@@ -48,7 +55,8 @@ pipeline {
                     withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                         sh """
                             kubectl apply -f k8s/deployment-stage.yaml --validate=false
-                            kubectl rollout status deployment/proxy-client -n stage --timeout=10m
+                            kubectl apply -f k8s/service-stage.yaml --validate=false
+                            kubectl rollout status deployment/${SERVICE_NAME} -n stage --timeout=10m
                         """
                     }
                 }
