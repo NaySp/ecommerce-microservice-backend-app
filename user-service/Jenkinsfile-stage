@@ -35,10 +35,8 @@ pipeline {
             steps {
                 dir(env.SERVICE_NAME) {
                     sh """
-                        docker build -t ${DOCKER_IMAGE}:${STAGE_TAG} .
-                        docker tag ${DOCKER_IMAGE}:${STAGE_TAG} ${DOCKER_IMAGE}:stage-latest
-                        # Cargar imagen en Minikube
-                        docker save ${DOCKER_IMAGE}:stage-latest | docker exec -i minikube docker load
+                        # Construir la imagen dentro del runtime de Minikube (evita permisos de Docker en Jenkins)
+                        minikube image build -t ${DOCKER_IMAGE}:stage-latest .
                     """
                 }
             }

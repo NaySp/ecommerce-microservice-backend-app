@@ -35,10 +35,7 @@ pipeline {
             steps {
                 dir(env.SERVICE_NAME) {
                     sh """
-                        docker build -t ${DOCKER_IMAGE}:${STAGE_TAG} .
-                        docker tag ${DOCKER_IMAGE}:${STAGE_TAG} ${DOCKER_IMAGE}:stage-latest
-                        # Cargar imagen en Minikube
-                        docker save ${DOCKER_IMAGE}:stage-latest | docker exec -i minikube docker load
+                        minikube image build -t ${DOCKER_IMAGE}:stage-latest .
                     """
                 }
             }
