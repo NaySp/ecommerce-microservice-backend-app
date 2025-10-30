@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+    tools {
+        jdk 'openjdk_11'
+    }
+    environment {
+        SERVICE_NAME = 'api-gateway'
+        DOCKER_IMAGE = "ecommerce/${SERVICE_NAME}"
+        K8S_NAMESPACE = 'stage'
+        STAGE_TAG = "stage-${BUILD_NUMBER}"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Build & Test') {
+            steps {
+                dir(env.SERVICE_NAME) {
+                    sh './mvnw clean compile'
+                    sh './mvnw test'
+                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+        stage('Package') {
+            steps {
+                dir(env.SERVICE_NAME) {
+                    sh './mvnw clean package -DskipTests'
+                }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                dir(env.SERVICE_NAME) {
+                    sh """
+                        docker build -t ${DOCKER_IMAGE}:${STAGE_TAG} .
+                        docker tag ${DOCKER_IMAGE}:${STAGE_TAG} ${DOCKER_IMAGE}:stage-latest
+                        minikube image load ${DOCKER_IMAGE}:stage-latest
+                    """
+                }
+            }
+        }
+        stage('Deploy to K8s Stage') {
+            steps {
+                dir(env.SERVICE_NAME) {
+                    withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                        sh """
+                            kubectl apply -f k8s/deployment-stage.yaml --validate=false
+                            kubectl rollout status deployment/api-gateway -n stage --timeout=10m
+                        """
+                    }
+                }
+            }
+        }
+        stage('Verify Deployment') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh """
+                        echo 'Verificando deployment en namespace ${K8S_NAMESPACE}...'
+                        kubectl get pods -n ${K8S_NAMESPACE} -l app=${SERVICE_NAME}
+                        kubectl get svc -n ${K8S_NAMESPACE} -l app=${SERVICE_NAME}
+                    """
+                }
+            }
+        }
+    }
+    post {
+        success {
+            echo 'API Gateway desplegado correctamente en stage.'
+        }
+        failure {
+            echo 'Pipeline de API Gateway (stage) falló.'
+        }
+        always {
+            echo 'Pipeline completado.'
+        }
+    }
+}

@@ -1,6 +1,5 @@
 
 server:
-  servlet:
     context-path: /user-service
 
 spring:
@@ -35,6 +34,10 @@ management:
   endpoint:
     health:
       show-details: always
+
+
+
+  server:
 
 
 

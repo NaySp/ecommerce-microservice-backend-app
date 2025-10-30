@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy-client
+  namespace: stage
+  labels:
+    app: proxy-client
+    environment: stage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proxy-client
+  template:
+    metadata:
+      labels:
+        app: proxy-client
+        environment: stage
+    spec:
+      containers:
+        - name: proxy-client
+          image: ecommerce/proxy-client:stage-latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8900
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "stage"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "192Mi"
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8900
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8900
+            initialDelaySeconds: 45
+            periodSeconds: 5
+            failureThreshold: 3
