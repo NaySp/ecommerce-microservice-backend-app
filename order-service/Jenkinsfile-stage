@@ -45,7 +45,7 @@ pipeline {
         stage('Deploy to K8s Stage') {
             steps {
                 dir(env.SERVICE_NAME) {
-                    withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    withEnv(["KUBECONFIG=/var/jenkins_kube/config"]) {
                         sh """
                             kubectl apply -f k8s/deployment-stage.yaml --validate=false
                             kubectl apply -f k8s/service-stage.yaml --validate=false
