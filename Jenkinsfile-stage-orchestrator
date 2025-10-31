@@ -35,10 +35,10 @@ pipeline {
                                 docker save ecommerce/${svc.name}:stage-latest | docker exec -i minikube docker load
                                 kubectl apply -f k8s/deployment-stage.yaml --validate=false
                                 if [ -f k8s/service-stage.yaml ]; then kubectl apply -f k8s/service-stage.yaml --validate=false; fi
+                                kubectl set env deployment/${svc.name} -n ${K8S_NAMESPACE} EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://service-discovery:8761/eureka EUREKA_INSTANCE=service-discovery CONFIG_SERVER_URL=http://cloud-config:9296/
                                 kubectl rollout status deployment/${svc.name} -n ${K8S_NAMESPACE} --timeout=10m
                             """
                         }
-                        // Espera a que el pod del servicio core esté listo antes de continuar
                         sh """
                             kubectl wait --for=condition=Ready pod -l app=${svc.name} -n ${K8S_NAMESPACE} --timeout=180s || true
                         """
@@ -63,6 +63,7 @@ pipeline {
                                 docker save ecommerce/${svc.name}:stage-latest | docker exec -i minikube docker load
                                 kubectl apply -f k8s/deployment-stage.yaml --validate=false
                                 if [ -f k8s/service-stage.yaml ]; then kubectl apply -f k8s/service-stage.yaml --validate=false; fi
+                                kubectl set env deployment/${svc.name} -n ${K8S_NAMESPACE} EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://service-discovery:8761/eureka EUREKA_INSTANCE=${svc.name} CONFIG_SERVER_URL=http://cloud-config:9296/
                                 kubectl rollout status deployment/${svc.name} -n ${K8S_NAMESPACE} --timeout=10m
                             """
                         }
