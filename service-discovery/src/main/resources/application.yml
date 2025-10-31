@@ -22,6 +22,9 @@ resilience4j:
         wait-duration-in-open-state: 5s
         sliding-window-type: COUNT_BASED
 
+server:
+  port: 8761
+  
 management:
   health:
     circuitbreakers:
