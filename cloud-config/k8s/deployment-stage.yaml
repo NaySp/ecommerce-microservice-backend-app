@@ -36,16 +36,4 @@ spec:
             limits:
               memory: "192Mi"
               cpu: "100m"
-          livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 9296
-            initialDelaySeconds: 60
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 9296
-            initialDelaySeconds: 45
-            periodSeconds: 5
             failureThreshold: 3
