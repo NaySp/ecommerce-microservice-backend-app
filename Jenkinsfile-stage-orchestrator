@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+    tools {
+        jdk 'openjdk_11'
+    }
+    environment {
+        K8S_NAMESPACE = 'stage'
+        KUBECONFIG = '/var/jenkins_kube/jenkins-kubeconfig.yaml'
+    }
+    options {
+        timestamps()
+    }
+    stages {
+        stage('Apply ConfigMap') {
+            steps {
+                sh """
+                    kubectl apply -f k8s/02-configmap-staging.yaml --validate=false || true
+                """
+            }
+        }
+
+        stage('Deploy Core Services') {
+            steps {
+                script {
+                    def core = [
+                        [name: 'service-discovery', port: '8761'],
+                        [name: 'cloud-config',     port: '9296'],
+                        [name: 'api-gateway',      port: '9000']
+                    ]
+                    core.each { svc ->
+                        dir(svc.name) {
+                            sh """
+                                ./mvnw -q -DskipTests clean package
+                                docker build -t ecommerce/${svc.name}:stage-latest .
+                                docker save ecommerce/${svc.name}:stage-latest | docker exec -i minikube docker load
+                                kubectl apply -f k8s/deployment-stage.yaml --validate=false
+                                if [ -f k8s/service-stage.yaml ]; then kubectl apply -f k8s/service-stage.yaml --validate=false; fi
+                                kubectl rollout status deployment/${svc.name} -n ${K8S_NAMESPACE} --timeout=10m
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Business Services') {
+            steps {
+                script {
+                    def business = [
+                        [name: 'user-service',    port: '8700'],
+                        [name: 'product-service', port: '8500'],
+                        [name: 'order-service',   port: '8300']
+                    ]
+                    business.each { svc ->
+                        dir(svc.name) {
+                            sh """
+                                ./mvnw -q -DskipTests clean package
+                                docker build -t ecommerce/${svc.name}:stage-latest .
+                                docker save ecommerce/${svc.name}:stage-latest | docker exec -i minikube docker load
+                                kubectl apply -f k8s/deployment-stage.yaml --validate=false
+                                if [ -f k8s/service-stage.yaml ]; then kubectl apply -f k8s/service-stage.yaml --validate=false; fi
+                                kubectl rollout status deployment/${svc.name} -n ${K8S_NAMESPACE} --timeout=10m
+                            """
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Stage environment fully deployed.'
+        }
+        failure {
+            echo 'Orchestrator failed. Check the stage where it stopped.'
+        }
+    }
+}
+
+
