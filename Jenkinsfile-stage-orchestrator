@@ -38,6 +38,10 @@ pipeline {
                                 kubectl rollout status deployment/${svc.name} -n ${K8S_NAMESPACE} --timeout=10m
                             """
                         }
+                        // Espera a que el pod del servicio core esté listo antes de continuar
+                        sh """
+                            kubectl wait --for=condition=Ready pod -l app=${svc.name} -n ${K8S_NAMESPACE} --timeout=180s || true
+                        """
                     }
                 }
             }
@@ -76,5 +80,3 @@ pipeline {
         }
     }
 }
-
-
