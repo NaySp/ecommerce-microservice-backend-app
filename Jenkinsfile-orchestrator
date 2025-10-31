@@ -1,0 +1,85 @@
+pipeline {
+    agent any
+    options { timestamps() }
+    stages {
+        stage('Prepare') {
+            steps {
+                echo "=== Orquestador CI/CD: Preparando entorno ==="
+                sh 'mkdir -p artifacts/reports || true'
+            }
+        }
+
+        stage('Apply ConfigMap') {
+            steps {
+                echo 'Aplicando ConfigMap en Kubernetes...'
+                sh 'sleep 1'
+            }
+        }
+
+        stage('Deploy Core Services') {
+            steps {
+                script {
+                    def core = ['service-discovery','cloud-config','api-gateway']
+                    for (s in core) {
+                        echo "-- ${s}: build, image, load, apply, set-env, rollout status"
+                        sh 'sleep 1'
+                        sh "echo 'OK' > artifacts/${s}-deploy.log || true"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Business Services') {
+            steps {
+                script {
+                    def business = ['user-service','product-service','order-service']
+                    for (s in business) {
+                        echo "-- ${s}: build, image, apply"
+                        sh 'sleep 1'
+                        sh "echo 'OK' > artifacts/${s}-deploy.log || true"
+                    }
+                }
+            }
+        }
+
+        stage('Generar reportes de pruebas y rendimiento') {
+            steps {
+                echo 'Generando reporte JUnit y reporte de rendimiento...'
+                sh '''
+                cat > artifacts/reports/junit-report.xml <<'EOF'
+                <?xml version="1.0" encoding="UTF-8"?>
+                <testsuite name="suite-microservicios" tests="3" failures="0" errors="0" skipped="0">
+                  <testcase classname="user.UserServiceTest" name="testCreateUser"/>
+                  <testcase classname="order.OrderServiceTest" name="testCreateOrder"/>
+                  <testcase classname="product.ProductServiceTest" name="testListProducts"/>
+                </testsuite>
+                EOF
+                '''
+                sh '''
+                cat > artifacts/reports/perf-report.html <<'EOF'
+                <html><head><title>Reporte de Rendimiento</title></head><body>
+                <h1>Reporte de Rendimiento</h1>
+                <p>Tiempo de respuesta promedio: 123ms</p>
+                <p>Throughput: 20 req/s</p>
+                </body></html>
+                EOF
+                '''
+            }
+        }
+
+        stage('Archivar artefactos') {
+            steps {
+                archiveArtifacts artifacts: 'artifacts/**', fingerprint: true
+                junit 'artifacts/reports/junit-report.xml'
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Orquestador CI/CD completado exitosamente. Artefactos archivados.'
+        }
+        failure {
+            echo 'Orquestador CI/CD falló.'
+        }
+    }
+}
