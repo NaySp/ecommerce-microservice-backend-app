@@ -8,6 +8,7 @@ pipeline {
         DOCKER_IMAGE = "ecommerce/${SERVICE_NAME}"
         K8S_NAMESPACE = 'stage'
         STAGE_TAG = "stage-${BUILD_NUMBER}"
+        KUBECONFIG = '/var/jenkins_kube/jenkins-kubeconfig.yaml'
     }
     stages {
         stage('Checkout') {
@@ -53,25 +54,21 @@ pipeline {
         stage('Deploy to K8s Stage') {
             steps {
                 dir(env.SERVICE_NAME) {
-                    withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                        sh """
-                            kubectl apply -f k8s/deployment-stage.yaml --validate=false
-                            kubectl apply -f k8s/service-stage.yaml --validate=false
-                            kubectl rollout status deployment/${SERVICE_NAME} -n stage --timeout=10m
-                        """
-                    }
+                    sh """
+                        kubectl apply -f k8s/deployment-stage.yaml --validate=false
+                        kubectl apply -f k8s/service-stage.yaml --validate=false
+                        kubectl rollout status deployment/${SERVICE_NAME} -n stage --timeout=10m
+                    """
                 }
             }
         }
         stage('Verify Deployment') {
             steps {
-                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                    sh """
-                        echo 'Verificando deployment en namespace ${K8S_NAMESPACE}...'
-                        kubectl get pods -n ${K8S_NAMESPACE} -l app=${SERVICE_NAME}
-                        kubectl get svc -n ${K8S_NAMESPACE} -l app=${SERVICE_NAME}
-                    """
-                }
+                sh """
+                    echo 'Verificando deployment en namespace ${K8S_NAMESPACE}...'
+                    kubectl get pods -n ${K8S_NAMESPACE} -l app=${SERVICE_NAME}
+                    kubectl get svc -n ${K8S_NAMESPACE} -l app=${SERVICE_NAME}
+                """
             }
         }
     }
