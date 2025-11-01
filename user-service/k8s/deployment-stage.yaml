@@ -39,6 +39,11 @@ spec:
             configMapKeyRef:
               name: micro-config
               key: PRODUCT_SERVICE_HOST
+        - name: SPRING_CONFIG_IMPORT
+          valueFrom:
+            configMapKeyRef:
+              name: micro-config
+              key: SPRING_CONFIG_IMPORT
         resources:
           requests:
             memory: "64Mi"

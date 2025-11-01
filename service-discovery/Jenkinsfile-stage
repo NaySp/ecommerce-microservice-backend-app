@@ -73,7 +73,7 @@ pipeline {
     }
     post {
         success {
-            echo 'Service Discovery desplegado correctamente en stage.'
+            echo 'Service Discovery desplegado corry ectamente en stage.'
         }
         failure {
             echo 'Pipeline de Service Discovery (stage) falló.'

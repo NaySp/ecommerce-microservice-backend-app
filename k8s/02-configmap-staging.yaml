@@ -38,4 +38,6 @@ data:
   # Management & Actuator
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics"
   MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "when-authorized"
+  # Spring Config Server
+  SPRING_CONFIG_IMPORT: "configserver:http://cloud-config.stage.svc.cluster.local:9296/"
 
