@@ -29,11 +29,19 @@ spec:
                 configMapKeyRef:
                   name: micro-config
                   key: SPRING_PROFILES_ACTIVE
+            - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+              valueFrom:
+                configMapKeyRef:
+                  name: micro-config
+                  key: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
           resources:
             requests:
               memory: "64Mi"
               cpu: "50m"
-            limits:
-              memory: "192Mi"
-              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9296
+            initialDelaySeconds: 10
+            periodSeconds: 5
             failureThreshold: 3

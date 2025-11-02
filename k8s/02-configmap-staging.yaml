@@ -14,7 +14,7 @@ data:
   JAVA_OPTS: "-Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
   
   # Service Discovery (Eureka)
-  EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://service-discovery.stage.svc.cluster.local:8761/eureka/"
+  EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://service-discovery:8761/eureka/"
   EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
   EUREKA_INSTANCE_HOSTNAME: "${spring.application.name}.stage.svc.cluster.local"
   EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"

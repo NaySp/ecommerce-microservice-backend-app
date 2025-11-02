@@ -46,21 +46,21 @@ spec:
               key: SPRING_CONFIG_IMPORT
         resources:
           requests:
-            memory: "64Mi"
-            cpu: "50m"
-          limits:
-            memory: "192Mi"
+            memory: "128Mi"
             cpu: "100m"
+          limits:
+            memory: "384Mi"
+            cpu: "200m"
         livenessProbe:
           httpGet:
             path: /actuator/health
             port: 8700
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /actuator/health
             port: 8700
-          initialDelaySeconds: 45
+          initialDelaySeconds: 90
           periodSeconds: 5
           failureThreshold: 3
