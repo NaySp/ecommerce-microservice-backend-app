@@ -46,11 +46,11 @@ spec:
               key: SPRING_CONFIG_IMPORT
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "384Mi"
+            memory: "256Mi"
             cpu: "200m"
+          limits:
+            memory: "768Mi"
+            cpu: "400m"
         livenessProbe:
           httpGet:
             path: /actuator/health

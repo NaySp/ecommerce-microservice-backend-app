@@ -36,12 +36,15 @@ spec:
                   key: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
           resources:
             requests:
-              memory: "64Mi"
-              cpu: "50m"
+              memory: "512Mi"
+              cpu: "100m"
+            limits:
+              memory: "1024Mi"
+              cpu: "200m"
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 9296
-            initialDelaySeconds: 10
+            initialDelaySeconds: 240
             periodSeconds: 5
             failureThreshold: 3

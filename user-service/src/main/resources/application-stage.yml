@@ -8,11 +8,9 @@ management:
         include: health,info,metrics
 
 spring:
-  # config:
-  #   import: "" # Deshabilitar cloud-config
+  application:
+    name: user-service
   cloud:
-    # config:
-    #   enabled: false
     discovery:
       client:
         simple:
