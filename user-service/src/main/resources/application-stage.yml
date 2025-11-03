@@ -1,5 +1,6 @@
 server:
   port: 8700
+  address: 0.0.0.0
 
 management:
   endpoints:
