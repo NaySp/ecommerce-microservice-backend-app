@@ -1,0 +1,34 @@
+# Configuración para USER-SERVICE en stage
+
+server:
+  port: 8700
+  address: 0.0.0.0
+
+spring:
+  application:
+    name: USER-SERVICE
+  cloud:
+    discovery:
+      client:
+        simple:
+          enabled: true
+  zipkin:
+    enabled: false
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+
+logging:
+  level:
+    root: WARN
+    com.selimhorri: INFO
