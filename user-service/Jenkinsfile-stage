@@ -54,11 +54,11 @@ pipeline {
         stage('Deploy to K8s Stage') {
             steps {
                 dir(env.SERVICE_NAME) {
-                    sh """
-                        kubectl apply -f k8s/deployment-stage.yaml --validate=false
-                        kubectl apply -f k8s/user-service-stage.yaml --validate=false
-                        kubectl rollout status deployment/${SERVICE_NAME} -n stage --timeout=10m
-                    """
+                        sh """
+                            kubectl apply -f k8s/deployment-stage.yaml --validate=false
+                            kubectl apply -f k8s/user-service-stage.yml --validate=false
+                            kubectl rollout status deployment/${SERVICE_NAME} -n stage --timeout=10m
+                        """
                 }
             }
         }
