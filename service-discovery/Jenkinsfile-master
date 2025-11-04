@@ -104,13 +104,14 @@ EOF'''
       steps {
         // Use Jenkins 'Secret file' credential containing kubeconfig (id in KUBECONFIG_CRED_ID)
         withCredentials([file(credentialsId: env.KUBECONFIG_CRED_ID, variable: 'KUBECONFIG_FILE')]) {
-          sh 'export KUBECONFIG=${KUBECONFIG_FILE} && kubectl version --short || true'
-          sh "export KUBECONFIG=${KUBECONFIG_FILE} && kubectl apply -f ${K8S_DEPLOY} --namespace=production --validate=false"
-          sh "export KUBECONFIG=${KUBECONFIG_FILE} && kubectl apply -f ${K8S_SERVICE} --namespace=production --validate=false"
-          // Update deployment image to the one built in this pipeline
-          sh "export KUBECONFIG=${KUBECONFIG_FILE} && kubectl set image deployment/${SERVICE_NAME} ${SERVICE_NAME}=${DOCKER_IMAGE} --namespace=production || true"
-          // Wait up to 5 minutes for rollout
-          sh "export KUBECONFIG=${KUBECONFIG_FILE} && kubectl rollout status deployment/${SERVICE_NAME} --namespace=production --timeout=300s"
+          // set KUBECONFIG in the environment for the following kubectl calls (avoids exposing the secret in the command string)
+          withEnv(["KUBECONFIG=${KUBECONFIG_FILE}"]) {
+            sh "kubectl version --short || true"
+            sh "kubectl apply -f ${K8S_DEPLOY} --namespace=production --validate=false"
+            sh "kubectl apply -f ${K8S_SERVICE} --namespace=production --validate=false"
+            sh "kubectl set image deployment/${SERVICE_NAME} ${SERVICE_NAME}=${DOCKER_IMAGE} --namespace=production || true"
+            sh "kubectl rollout status deployment/${SERVICE_NAME} --namespace=production --timeout=300s"
+          }
         }
       }
     }
@@ -119,9 +120,11 @@ EOF'''
       steps {
         // Use kubeconfig credential for verification steps as well
         withCredentials([file(credentialsId: env.KUBECONFIG_CRED_ID, variable: 'KUBECONFIG_FILE')]) {
-          sh 'export KUBECONFIG=${KUBECONFIG_FILE} && kubectl get pods -n production'
-          sh 'export KUBECONFIG=${KUBECONFIG_FILE} && kubectl get svc -n production'
-          sh 'export KUBECONFIG=${KUBECONFIG_FILE} && kubectl logs -n production -l app=${SERVICE_NAME} --tail=200 || true'
+          withEnv(["KUBECONFIG=${KUBECONFIG_FILE}"]) {
+            sh "kubectl get pods -n production"
+            sh "kubectl get svc -n production"
+            sh "kubectl logs -n production -l app=${SERVICE_NAME} --tail=200 || true"
+          }
         }
       }
     }
