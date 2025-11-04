@@ -101,31 +101,25 @@ EOF'''
     }
 
     stage('Deploy to K8s') {
+      agent { label 'minikube' }
       steps {
-        // Use Jenkins 'Secret file' credential containing kubeconfig (id in KUBECONFIG_CRED_ID)
-        withCredentials([file(credentialsId: env.KUBECONFIG_CRED_ID, variable: 'KUBECONFIG_FILE')]) {
-          // set KUBECONFIG in the environment for the following kubectl calls (avoids exposing the secret in the command string)
-          withEnv(["KUBECONFIG=${KUBECONFIG_FILE}"]) {
-            sh "kubectl version --short || true"
-            sh "kubectl apply -f ${K8S_DEPLOY} --namespace=production --validate=false"
-            sh "kubectl apply -f ${K8S_SERVICE} --namespace=production --validate=false"
-            sh "kubectl set image deployment/${SERVICE_NAME} ${SERVICE_NAME}=${DOCKER_IMAGE} --namespace=production || true"
-            sh "kubectl rollout status deployment/${SERVICE_NAME} --namespace=production --timeout=300s"
-          }
-        }
+        // Use minikube's kubectl wrapper on the agent so we avoid kubeconfig reachability issues
+        // This requires the agent to have minikube installed and accessible in PATH.
+        sh "minikube kubectl -- version || true"
+        sh "minikube kubectl -- apply -f ${K8S_DEPLOY} --namespace=production --validate=false"
+        sh "minikube kubectl -- apply -f ${K8S_SERVICE} --namespace=production --validate=false"
+        sh "minikube kubectl -- set image deployment/${SERVICE_NAME} ${SERVICE_NAME}=${DOCKER_IMAGE} --namespace=production || true"
+        sh "minikube kubectl -- rollout status deployment/${SERVICE_NAME} --namespace=production --timeout=300s"
       }
     }
 
     stage('Verify Deployment') {
+      agent { label 'minikube' }
       steps {
-        // Use kubeconfig credential for verification steps as well
-        withCredentials([file(credentialsId: env.KUBECONFIG_CRED_ID, variable: 'KUBECONFIG_FILE')]) {
-          withEnv(["KUBECONFIG=${KUBECONFIG_FILE}"]) {
-            sh "kubectl get pods -n production"
-            sh "kubectl get svc -n production"
-            sh "kubectl logs -n production -l app=${SERVICE_NAME} --tail=200 || true"
-          }
-        }
+        // Verify using minikube's kubectl on the agent
+        sh "minikube kubectl -- get pods -n production"
+        sh "minikube kubectl -- get svc -n production"
+        sh "minikube kubectl -- logs -n production -l app=${SERVICE_NAME} --tail=200 || true"
       }
     }
   }
