@@ -1,5 +1,8 @@
 pipeline {
   agent any
+  parameters {
+    booleanParam(name: 'PUSH_TAG', defaultValue: false, description: 'Set to true to push a git tag to origin (requires Git credentials)')
+  }
   environment {
     SERVICE_NAME = 'service-discovery'
     VERSION = "v1.0.${BUILD_NUMBER}"
@@ -33,11 +36,11 @@ pipeline {
     }
 
     stage('Docker Build') {
+      agent { label 'minikube' }
       steps {
-        // build Docker image using service-discovery folder as context so Docker ADD finds target/*.jar
-        sh "docker build -t ${DOCKER_IMAGE} -f service-discovery/Dockerfile service-discovery"
-        // Optional: push to registry if required
-        // sh "docker push ${DOCKER_IMAGE}"
+        // Build the Docker image inside the Minikube environment so the cluster can use it directly.
+        // Requires minikube and the ability to run `minikube image build` on the agent.
+        sh "minikube image build -t ${DOCKER_IMAGE} service-discovery"
       }
     }
 
@@ -91,10 +94,14 @@ EOF'''
     }
 
     stage('Tag Version') {
+      when {
+        expression { return params.PUSH_TAG }
+      }
       steps {
         // Ensure Jenkins has Git credentials set or run in an environment which can push tags
         sh 'git config user.email "jenkins@ci.local" || true'
         sh 'git config user.name "jenkins" || true'
+        // Tag and push - requires credentials. Enable by setting the parameter PUSH_TAG=true in the build.
         sh "git tag -a ${VERSION} -m 'Release ${VERSION}' || true"
         sh "git push origin ${VERSION} || true"
       }
