@@ -23,16 +23,31 @@ pipeline {
 
     stage('Build & Test') {
       steps {
-        sh 'chmod +x ./mvnw || true'
-        // build only service-discovery and its required modules to avoid unrelated module failures
-        sh './mvnw -pl service-discovery -am clean compile'
-        sh './mvnw -pl service-discovery -am test'
+        script {
+          if (params.DEMO_MODE) {
+            // Print a clearly-labelled simulated green success for demo purposes
+            sh "printf '\u001B[32m=== DEMO MODE: Build & Test - SIMULATED SUCCESS ===\\n\u001B[0m'"
+            sh "printf '\u001B[32mSIMULATED: mvnw -pl service-discovery -am clean compile && mvnw -pl service-discovery -am test\\n\u001B[0m'"
+          } else {
+            sh 'chmod +x ./mvnw || true'
+            // build only service-discovery and its required modules to avoid unrelated module failures
+            sh './mvnw -pl service-discovery -am clean compile'
+            sh './mvnw -pl service-discovery -am test'
+          }
+        }
       }
     }
 
     stage('Package') {
       steps {
-        sh './mvnw -pl service-discovery -am package -DskipTests'
+        script {
+          if (params.DEMO_MODE) {
+            sh "printf '\u001B[32m=== DEMO MODE: Package - SIMULATED SUCCESS ===\\n\u001B[0m'"
+            sh "printf '\u001B[32mSIMULATED: mvnw -pl service-discovery -am package -DskipTests\\n\u001B[0m'"
+          } else {
+            sh './mvnw -pl service-discovery -am package -DskipTests'
+          }
+        }
       }
     }
 
@@ -54,7 +69,37 @@ pipeline {
 
     stage('Release Notes') {
       steps {
-        sh '''cat <<EOF > ${RELEASE_NOTES}
+        script {
+          if (params.DEMO_MODE) {
+            // Write a simulated release notes file with clear SIMULATED header
+            sh '''cat <<EOF > ${RELEASE_NOTES}
+# SIMULATED RELEASE NOTES - DEMO MODE
+# Release Notes - Service Discovery (SIMULATED)
+
+- Fecha: $(date '+%Y-%m-%d %H:%M:%S')
+- Servicio: ${SERVICE_NAME}
+- Versión: ${VERSION}
+- Build Number: ${BUILD_NUMBER}
+
+## Nota
+Este archivo fue generado en DEMO_MODE y representa una salida simulada para fines de demostración.
+
+## Cambios incluidos (simulado)
+- abc123 Simulated change 1 (Author)
+- def456 Simulated change 2 (Author)
+
+## Checklist de validación (simulado)
+- [x] Build exitoso (simulado)
+- [x] Pruebas OK (simulado)
+- [x] Imagen Docker generada (simulado)
+- [x] Despliegue aplicado en Kubernetes (simulado)
+- [x] Rollout exitoso (simulado)
+
+EOF'''
+            archiveArtifacts artifacts: "${RELEASE_NOTES}", onlyIfSuccessful: true
+            sh "printf '\u001B[32m=== DEMO MODE: Release Notes generated (SIMULATED) ===\\n\u001B[0m'"
+          } else {
+            sh '''cat <<EOF > ${RELEASE_NOTES}
 # Release Notes - Service Discovery
 
 - Fecha: $(date '+%Y-%m-%d %H:%M:%S')
@@ -97,7 +142,9 @@ $(git --no-pager log -n 5 --pretty=format:'- %h %s (%an)' )
 - [x] Rollout exitoso
 
 EOF'''
-        archiveArtifacts artifacts: "${RELEASE_NOTES}", onlyIfSuccessful: true
+            archiveArtifacts artifacts: "${RELEASE_NOTES}", onlyIfSuccessful: true
+          }
+        }
       }
     }
 
@@ -106,12 +153,18 @@ EOF'''
         expression { return params.PUSH_TAG }
       }
       steps {
-        // Ensure Jenkins has Git credentials set or run in an environment which can push tags
-        sh 'git config user.email "jenkins@ci.local" || true'
-        sh 'git config user.name "jenkins" || true'
-        // Tag and push - requires credentials. Enable by setting the parameter PUSH_TAG=true in the build.
-        sh "git tag -a ${VERSION} -m 'Release ${VERSION}' || true"
-        sh "git push origin ${VERSION} || true"
+          script {
+            if (params.DEMO_MODE) {
+              sh "printf '\u001B[32m=== DEMO MODE: Tag Version - SIMULATED (would tag ${VERSION}) ===\\n\u001B[0m'"
+            } else {
+              // Ensure Jenkins has Git credentials set or run in an environment which can push tags
+              sh 'git config user.email "jenkins@ci.local" || true'
+              sh 'git config user.name "jenkins" || true'
+              // Tag and push - requires credentials. Enable by setting the parameter PUSH_TAG=true in the build.
+              sh "git tag -a ${VERSION} -m 'Release ${VERSION}' || true"
+              sh "git push origin ${VERSION} || true"
+            }
+          }
       }
     }
 
